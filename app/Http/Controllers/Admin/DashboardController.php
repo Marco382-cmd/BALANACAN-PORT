@@ -26,9 +26,11 @@ class DashboardController extends Controller
             'today_revenue'       => Booking::where('payment_status', 'paid')
                                            ->whereDate('created_at', $today)
                                            ->sum('total_amount'),
-            'active_trips'        => Trip::where('status', 'scheduled')
-                                           ->where('departure_time', '>=', Carbon::now())
-                                           ->count(),
+
+            // ✅ FIXED: changed 'scheduled' → 'active' to match TripController status values
+            // TripController only allows: active, inactive, canceled
+            'active_trips'        => Trip::where('status', 'active')->count(),
+
             'total_routes'        => Route::where('status', '!=', 'inactive')->count(),
         ];
 
@@ -38,10 +40,13 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        // ── Upcoming trips (next 5 scheduled) ──────────────────
+        // ── Upcoming trips (next 5 active) ──────────────────────
+        // ✅ FIXED: changed 'scheduled' → 'active' here too
+        // Also removed departure_time >= now() since departure_time is stored
+        // as a TIME string (e.g. "07:00"), not a full datetime — comparing it
+        // to Carbon::now() won't work correctly.
         $upcomingTrips = Trip::with('route')
-            ->where('status', 'scheduled')
-            ->where('departure_time', '>=', Carbon::now())
+            ->where('status', 'active')
             ->orderBy('departure_time')
             ->take(5)
             ->get();

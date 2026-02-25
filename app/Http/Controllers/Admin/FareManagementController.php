@@ -22,35 +22,18 @@ class FareManagementController extends Controller
         return view('admin.fares.index', compact('routes'));
     }
 
-    // ── Passenger Fares ─────────────────────────────────────────────────────
+    // ── Passenger Fares ──────────────────────────────────────────────────────
 
     public function createPassengerFare(Route $route): View
     {
-        return view('admin.fares.passenger.create', compact('route'));
+        return view('admin.fares.passenger.form', [
+            'route' => $route,
+            'fare'  => null,
+            'edit'  => false,
+        ]);
     }
 
     public function storePassengerFare(Request $request, Route $route): RedirectResponse
-    {
-        $data = $request->validate([
-            'fare_type'   => 'required|in:regular,student,senior,pwd,children',
-            'label'       => 'nullable|string|max:100',
-            'amount'      => 'required|numeric|min:0',
-            'discount_pct'=> 'nullable|numeric|min:0|max:100',
-            'required_id' => 'nullable|string|max:200',
-            'notes'       => 'nullable|string|max:500',
-        ]);
-
-        $route->passengerFares()->create($data);
-            return back()->with('success', 'Passenger fare added successfully.');
-    }
-
-    public function editPassengerFare(PassengerFare $fare): View
-    {
-        $route = $fare->route;
-        return view('admin.fares.passenger.edit', compact('fare', 'route'));
-    }
-
-    public function updatePassengerFare(Request $request, PassengerFare $fare): RedirectResponse
     {
         $data = $request->validate([
             'fare_type'    => 'required|in:regular,student,senior,pwd,children',
@@ -61,23 +44,59 @@ class FareManagementController extends Controller
             'notes'        => 'nullable|string|max:500',
         ]);
 
-        $fare->update($data);
+        $data['discount_pct'] = $data['discount_pct'] ?? 0;
 
-         return back()->with('success', 'Passenger fare updated successfully.');
+        $route->passengerFares()->create($data);
+
+        return redirect()->route('admin.fares.index')
+            ->with('success', 'Passenger fare added successfully.');
     }
+
+    public function editPassengerFare(PassengerFare $fare): View
+    {
+        return view('admin.fares.passenger.form', [
+            'route' => $fare->route,
+            'fare'  => $fare,
+            'edit'  => true,
+        ]);
+    }
+
+   public function updatePassengerFare(Request $request, PassengerFare $fare): RedirectResponse
+{
+    $data = $request->validate([
+        'fare_type'    => 'required|in:regular,student,senior,pwd,children',
+        'label'        => 'nullable|string|max:100',
+        'amount'       => 'required|numeric|min:0',
+        'discount_pct' => 'nullable|numeric|min:0|max:100',
+        'notes'        => 'nullable|string|max:500',
+    ]);
+
+    // Ensure discount_pct is never null
+    $data['discount_pct'] = $data['discount_pct'] ?? 0;
+
+    $fare->update($data);
+
+    return redirect()->route('admin.fares.index')
+        ->with('success', 'Passenger fare updated successfully.');
+}
 
     public function destroyPassengerFare(PassengerFare $fare): RedirectResponse
     {
-        $route = $fare->route;
         $fare->delete();
-             return back()->with('success', 'Passenger fare deleted');
+
+        return redirect()->route('admin.fares.index')
+            ->with('success', 'Passenger fare deleted.');
     }
 
     // ── Vehicle Fares ────────────────────────────────────────────────────────
 
     public function createVehicleFare(Route $route): View
     {
-        return view('admin.fares.vehicle.create', compact('route'));
+        return view('admin.fares.vehicle.form', [
+            'route' => $route,
+            'fare'  => null,
+            'edit'  => false,
+        ]);
     }
 
     public function storeVehicleFare(Request $request, Route $route): RedirectResponse
@@ -93,13 +112,17 @@ class FareManagementController extends Controller
 
         $route->vehicleFares()->create($data);
 
-             return back()->with('success', 'Vehicle fare added successfully.');
+        return redirect()->route('admin.fares.index')
+            ->with('success', 'Vehicle fare added successfully.');
     }
 
     public function editVehicleFare(VehicleFare $fare): View
     {
-        $route = $fare->route;
-        return view('admin.fares.vehicle.edit', compact('fare', 'route'));
+        return view('admin.fares.vehicle.form', [
+            'route' => $fare->route,
+            'fare'  => $fare,
+            'edit'  => true,
+        ]);
     }
 
     public function updateVehicleFare(Request $request, VehicleFare $fare): RedirectResponse
@@ -115,15 +138,15 @@ class FareManagementController extends Controller
 
         $fare->update($data);
 
-        return back()->with('success', 'Vehicle fare updated successfully.');
+        return redirect()->route('admin.fares.index')
+            ->with('success', 'Vehicle fare updated successfully.');
     }
 
     public function destroyVehicleFare(VehicleFare $fare): RedirectResponse
     {
-        $route = $fare->route;
         $fare->delete();
 
-        return redirect()->route('admin.routes.show', $route)
+        return redirect()->route('admin.fares.index')
             ->with('success', 'Vehicle fare deleted.');
     }
 }

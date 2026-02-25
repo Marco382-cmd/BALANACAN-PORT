@@ -58,22 +58,23 @@ class FareController extends Controller
         return view('admin.fares.passenger-form', compact('routes', 'fare', 'edit', 'selectedRouteId'));
     }
 
-    public function passengerUpdate(Request $request, PassengerFare $passengerFare)
-    {
-        $validated = $request->validate([
-            'route_id'     => 'required|exists:routes,id',
-            'fare_type'    => 'required|in:regular,student,senior,children,pwd',
-            'label'        => 'required|string|max:60',
-            'amount'       => 'required|numeric|min:0',
-            'discount_pct' => 'nullable|numeric|min:0|max:100',
-            'notes'        => 'nullable|string',
-        ]);
+   public function updatePassengerFare(Request $request, PassengerFare $fare)
+{
+    // Validate input
+    $data = $request->validate([
+        'discount_pct' => 'nullable|numeric|min:0|max:100',
+        'required_id'  => 'nullable|string|max:200',
+        'notes'        => 'nullable|string|max:500',
+    ]);
 
-        $passengerFare->update($validated);
+    // If discount_pct is null, set it to 0 (or any default you prefer)
+    $data['discount_pct'] = $data['discount_pct'] ?? 0;
 
-        return redirect()->route('admin.fares.index')
-            ->with('success', 'Passenger fare updated successfully.');
-    }
+    // Update the fare
+    $fare->update($data);
+
+    return back()->with('success', 'Passenger fare updated successfully.');
+}
 
     public function passengerDestroy(PassengerFare $passengerFare)
     {
